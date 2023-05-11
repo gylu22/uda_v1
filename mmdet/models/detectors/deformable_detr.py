@@ -50,21 +50,21 @@ class DeformableDETR(DetectionTransformer):
         self.as_two_stage = as_two_stage
         self.num_feature_levels = num_feature_levels
 
-        if bbox_head is not None:
-            assert 'share_pred_layer' not in bbox_head and \
-                   'num_pred_layer' not in bbox_head and \
-                   'as_two_stage' not in bbox_head, \
-                'The two keyword args `share_pred_layer`, `num_pred_layer`, ' \
-                'and `as_two_stage are set in `detector.__init__()`, users ' \
-                'should not set them in `bbox_head` config.'
-            # The last prediction layer is used to generate proposal
-            # from encode feature map when `as_two_stage` is `True`.
-            # And all the prediction layers should share parameters
-            # when `with_box_refine` is `True`.
-            bbox_head['share_pred_layer'] = not with_box_refine
-            bbox_head['num_pred_layer'] = (decoder['num_layers'] + 1) \
-                if self.as_two_stage else decoder['num_layers']
-            bbox_head['as_two_stage'] = as_two_stage
+        # if bbox_head is not None:
+        #     assert 'share_pred_layer' not in bbox_head and \
+        #            'num_pred_layer' not in bbox_head and \
+        #            'as_two_stage' not in bbox_head, \
+        #         'The two keyword args `share_pred_layer`, `num_pred_layer`, ' \
+        #         'and `as_two_stage are set in `detector.__init__()`, users ' \
+        #         'should not set them in `bbox_head` config.'
+        #     # The last prediction layer is used to generate proposal
+        #     # from encode feature map when `as_two_stage` is `True`.
+        #     # And all the prediction layers should share parameters
+        #     # when `with_box_refine` is `True`.
+        bbox_head['share_pred_layer'] = not with_box_refine
+        bbox_head['num_pred_layer'] = (decoder['num_layers'] + 1) \
+            if self.as_two_stage else decoder['num_layers']
+        bbox_head['as_two_stage'] = as_two_stage
 
         super().__init__(*args, decoder=decoder, bbox_head=bbox_head, **kwargs)
 

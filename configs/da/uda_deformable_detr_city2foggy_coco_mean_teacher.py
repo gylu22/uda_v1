@@ -1,0 +1,57 @@
+_base_ = [
+    './deformable_detr_coco.py',
+    '../_base_/default_runtime.py',
+    '../_base_/datasets/da_city2foggy_coco.py'
+]
+
+
+detector = _base_.model 
+detector.init_cfg = dict(type='Pretrained', checkpoint='work_dirs/best_coco_bbox_mAP_epoch_43.pth')
+
+
+model=dict(
+    _delete_=True,
+    type='UDA_DETR',
+    detector=detector,
+    data_preprocessor=dict(
+        type='MultiBranchDataPreprocessor',
+        data_preprocessor=detector.data_preprocessor),
+    semi_train_cfg=dict(
+        freeze_teacher=True,
+        sup_weight=1.0,
+        unsup_weight=4.0,
+        pseudo_label_initial_score_thr=0.5,
+        min_pseudo_bbox_wh=(1e-2, 1e-2)),
+    semi_test_cfg=dict(predict_on='teacher'))
+
+
+# learning policy
+max_epochs = 50
+train_cfg = dict(
+    type='EpochBasedTrainLoop', max_epochs=max_epochs, val_interval=1)
+val_cfg = dict(type='TeacherStudentValLoop')
+test_cfg = dict(type='TestLoop')
+
+
+param_scheduler = [
+    dict(
+        type='MultiStepLR',
+        begin=0,
+        end=max_epochs,
+        by_epoch=True,
+        milestones=[40],
+        gamma=0.1)
+]
+
+# optimizer
+optim_wrapper = dict(
+    type='OptimWrapper',
+    optimizer=dict(type='AdamW', lr=0.0002, weight_decay=0.0001))
+
+
+# seed 
+randomness=dict(seed=0)
+
+auto_scale_lr = dict(base_batch_size=32,enable=True)
+
+custom_hooks = [dict(type='MeanTeacherHook')]
