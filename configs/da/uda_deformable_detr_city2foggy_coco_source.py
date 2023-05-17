@@ -124,7 +124,7 @@ train_dataloader = dict(
 # optimizer
 optim_wrapper = dict(
     type='OptimWrapper',
-    optimizer=dict(type='AdamW', lr=0.0002, weight_decay=0.0001),
+    optimizer=dict(type='AdamW', lr=0.0008, weight_decay=0.0001),
     clip_grad=dict(max_norm=0.1, norm_type=2),
     paramwise_cfg=dict(
         custom_keys={
@@ -156,6 +156,6 @@ param_scheduler = [
 # base_batch_size = (16 GPUs) x (2 samples per GPU)
 auto_scale_lr = dict(base_batch_size=32,enable=True)
 
-
+launcher='pytorch'
 # save best weights hook 
 default_hooks = dict(checkpoint=dict(type='CheckpointHook', save_best='auto'))

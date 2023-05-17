@@ -72,7 +72,7 @@ def imagenet_vid_classes() -> list:
 def coco_classes() -> list:
     """Class names of COCO."""
     return [
-        'car', 'person', 'rider', 'truck', 'bus', 'train', 'motorcycle', 'bicycle'
+        'person', 'car', 'train', 'rider', 'truck', 'motorcycle', 'bicycle', 'bus'
         # 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train',
         # 'truck', 'boat', 'traffic_light', 'fire_hydrant', 'stop_sign',
         # 'parking_meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep',

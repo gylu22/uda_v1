@@ -4,7 +4,7 @@ default_hooks = dict(
     timer=dict(type='IterTimerHook'),
     logger=dict(type='LoggerHook', interval=50),
     param_scheduler=dict(type='ParamSchedulerHook'),
-    checkpoint=dict(type='CheckpointHook', interval=1),
+    checkpoint=dict(type='CheckpointHook', interval=10),
     sampler_seed=dict(type='DistSamplerSeedHook'),
     visualization=dict(type='DetVisualizationHook'))
 
@@ -22,3 +22,12 @@ log_processor = dict(type='LogProcessor', window_size=50, by_epoch=True)
 log_level = 'INFO'
 load_from = None
 resume = False
+
+# vis_backends = [dict(type='WandbVisBackend',init_kwargs=dict(project='uda_v1',name ='uda_deformable_detr_source_v1'))]
+# visualizer = dict(
+#     type='DetLocalVisualizer', vis_backends=vis_backends, name='visualizer')
+# log_processor = dict(type='LogProcessor', window_size=50, by_epoch=True)
+
+# log_level = 'INFO'
+# load_from = None
+# resume = False

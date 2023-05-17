@@ -6,8 +6,13 @@ _base_ = [
 
 
 detector = _base_.model 
-detector.init_cfg = dict(type='Pretrained', checkpoint='work_dirs/best_coco_bbox_mAP_epoch_43.pth')
-
+# detector.init_cfg = dict(type='Pretrained', checkpoint='work_dirs/uda_deformable_detr_city2foggy_coco_source/epoch_50.pth')
+# detector.data_preprocessor = dict(
+#     type='DetDataPreprocessor',
+#     mean=[103.530, 116.280, 123.675],
+#     std=[1.0, 1.0, 1.0],
+#     bgr_to_rgb=True,
+#     pad_size_divisor=32)
 
 model=dict(
     _delete_=True,
@@ -20,9 +25,11 @@ model=dict(
         freeze_teacher=True,
         sup_weight=1.0,
         unsup_weight=4.0,
-        pseudo_label_initial_score_thr=0.5,
+        pseudo_label_initial_score_thr=0.3,
         min_pseudo_bbox_wh=(1e-2, 1e-2)),
-    semi_test_cfg=dict(predict_on='teacher'))
+    semi_test_cfg=dict(predict_on='teacher'),
+    ckpt='work_dirs/uda_deformable_detr_city2foggy_coco_source/epoch_50.pth'
+    )
 
 
 # learning policy
@@ -54,4 +61,5 @@ randomness=dict(seed=0)
 
 auto_scale_lr = dict(base_batch_size=32,enable=True)
 
-custom_hooks = [dict(type='MeanTeacherHook')]
+custom_hooks = [dict(type='MeanTeacherHook',skip_buffer=False)]
+launcher = 'pytorch'

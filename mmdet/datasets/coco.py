@@ -15,7 +15,7 @@ class CocoDataset(BaseDetDataset):
     """Dataset for COCO."""
 
     METAINFO = {
-        'classes' : ('car', 'person', 'rider', 'truck', 'bus', 'train', 'motorcycle', 'bicycle'),
+        'classes' : ('person', 'car', 'train', 'rider', 'truck', 'motorcycle', 'bicycle', 'bus'),
         'palette': [(106, 0, 228), (119, 11, 32), (165, 42, 42), (0, 0, 192),
                     (197, 226, 255), (0, 60, 100), (0, 0, 142), (255, 77, 255)]
         # 'classes':
