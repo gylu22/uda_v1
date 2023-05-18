@@ -25,7 +25,7 @@ model=dict(
         freeze_teacher=True,
         sup_weight=1.0,
         unsup_weight=4.0,
-        pseudo_label_initial_score_thr=0.3,
+        pseudo_label_initial_score_thr=0.5,
         min_pseudo_bbox_wh=(1e-2, 1e-2)),
     semi_test_cfg=dict(predict_on='teacher'),
     ckpt='work_dirs/uda_deformable_detr_city2foggy_coco_source/epoch_50.pth'
