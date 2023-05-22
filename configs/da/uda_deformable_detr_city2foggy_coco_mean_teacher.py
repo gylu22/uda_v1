@@ -89,7 +89,7 @@ param_scheduler = [
 # optimizer
 optim_wrapper = dict(
     type='OptimWrapper',
-    optimizer=dict(type='AdamW', lr=1.6e-5, weight_decay=0.0001))
+    optimizer=dict(type='AdamW', lr=3.2e-5, weight_decay=0.0001))
 
 default_hooks = dict(
     checkpoint=dict(by_epoch=False, interval=50000, max_keep_ckpts=2))

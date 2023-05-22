@@ -166,7 +166,8 @@ class DetectionTransformer(BaseDetector, metaclass=ABCMeta):
 
     def forward_transformer(self,
                             img_feats: Tuple[Tensor],
-                            batch_data_samples: OptSampleList = None) -> Dict:
+                            batch_data_samples: OptSampleList = None,
+                            query_pos = None) -> Dict:
         """Forward process of Transformer, which includes four steps:
         'pre_transformer' -> 'encoder' -> 'pre_decoder' -> 'decoder'. We
         summarized the parameters flow of the existing DETR-like detector,
@@ -220,6 +221,9 @@ class DetectionTransformer(BaseDetector, metaclass=ABCMeta):
         tmp_dec_in, head_inputs_dict = self.pre_decoder(**encoder_outputs_dict)
         decoder_inputs_dict.update(tmp_dec_in)
 
+        if query_pos is not None:
+             decoder_inputs_dict["query_pos"] = query_pos
+            
         decoder_outputs_dict = self.forward_decoder(**decoder_inputs_dict)
         head_inputs_dict.update(decoder_outputs_dict)
         return head_inputs_dict
