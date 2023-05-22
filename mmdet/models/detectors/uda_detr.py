@@ -141,7 +141,7 @@ class UDA_DETR(BaseDetector):
         # x = self.teacher.extract_feat(batch_inputs)
         self.teacher.eval()
         results_list = self.teacher.predict(batch_inputs,batch_data_samples,rescale=False)
-        # torch.save(results_list,'./work_dirs/student_outs_no_rescale.pth')
+        # torch.save(results_list,'./work_dirs/stu_pre_1.pth')
         
         for data_samples, results in zip(batch_data_samples, results_list):
             data_samples.gt_instances = results.pred_instances
@@ -156,7 +156,7 @@ class UDA_DETR(BaseDetector):
                 data_samples.gt_instances.bboxes,
                 torch.from_numpy(data_samples.homography_matrix).inverse().to(
                     self.data_preprocessor.device), data_samples.ori_shape)
-        # torch.save(batch_data_samples,'./work_dirs/outputs.pth')
+        # torch.save(batch_data_samples,'./work_dirs/stu_pre_matrix_1.pth')
         
         batch_info = {
             # 'feat': x,
@@ -290,21 +290,3 @@ class UDA_DETR(BaseDetector):
     def init_weights(self):
         pass 
 
-
-
-
-    def re_format_loss(self,input_loss:dict) -> dict:
-        
-                
-        for k , v in input_loss.items():
-            if k[-3:] == 'cls' and k[:4] !='loss':
-                input_loss.pop(k)
-                input_loss['loss_cls'] += v
-            elif k[-3:] == 'box' and k[:4] !='loss':
-                input_loss.pop(k)
-                input_loss['loss_bbox'] += v
-            elif k[-3:] == 'iou' and k[:4] !='loss':
-                input_loss.pop(k)
-                input_loss['loss_iou'] += v
-            
-        return input_loss

@@ -24,18 +24,20 @@ model=dict(
     semi_train_cfg=dict(
         freeze_teacher=True,
         sup_weight=1.0,
-        unsup_weight=4.0,
+        unsup_weight=1.0,
         pseudo_label_initial_score_thr=0.5,
         min_pseudo_bbox_wh=(1e-2, 1e-2)),
     semi_test_cfg=dict(predict_on='teacher'),
     ckpt='work_dirs/uda_deformable_detr_city2foggy_coco_source/epoch_50.pth'
     )
 
-
+"""
 # learning policy
 max_epochs = 50
 train_cfg = dict(
-    type='EpochBasedTrainLoop', max_epochs=max_epochs, val_interval=1)
+    # type='EpochBasedTrainLoop',
+    by_epoch=True,max_epochs=max_epochs, val_begin=1, val_interval=1)
+
 val_cfg = dict(type='TeacherStudentValLoop')
 test_cfg = dict(type='TestLoop')
 
@@ -50,6 +52,7 @@ param_scheduler = [
         gamma=0.1)
 ]
 
+
 # optimizer
 optim_wrapper = dict(
     type='OptimWrapper',
@@ -62,4 +65,38 @@ randomness=dict(seed=0)
 auto_scale_lr = dict(base_batch_size=32,enable=True)
 
 custom_hooks = [dict(type='MeanTeacherHook',skip_buffer=False)]
-launcher = 'pytorch'
+"""
+
+# training schedule for 180k
+train_cfg = dict(
+    type='IterBasedTrainLoop', max_iters=150000, val_interval=3000)
+val_cfg = dict(type='TeacherStudentValLoop')
+test_cfg = dict(type='TestLoop')
+
+# learning rate policy
+param_scheduler = [
+    # dict(
+    #     type='LinearLR', start_factor=0.001, by_epoch=False, begin=0, end=500),
+    dict(
+        type='MultiStepLR',
+        begin=0,
+        end=150000,
+        by_epoch=False,
+        milestones=[120000, 150000],
+        gamma=0.1)
+]
+
+# optimizer
+optim_wrapper = dict(
+    type='OptimWrapper',
+    optimizer=dict(type='AdamW', lr=1.6e-5, weight_decay=0.0001))
+
+default_hooks = dict(
+    checkpoint=dict(by_epoch=False, interval=50000, max_keep_ckpts=2))
+log_processor = dict(by_epoch=False)
+
+custom_hooks = [dict(type='MeanTeacherHook',skip_buffer=False)]
+
+
+auto_scale_lr = dict(base_batch_size=32,enable=True)
+launcher = dict(type='pytorch')

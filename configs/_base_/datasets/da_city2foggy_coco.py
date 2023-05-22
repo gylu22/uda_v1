@@ -3,7 +3,7 @@ data_root = 'data/Devkit/city2foggy/'
 
 backend_args = None
 batch_size = 2
-num_workers =2 
+num_workers = 4
 
 
 color_space = [
@@ -26,7 +26,7 @@ geometric = [
     [dict(type='TranslateY')],
 ]
 
-scale = [(1333, 400), (1333, 1200)]
+scale = [(400, 1333), (1200, 1333)]
 branch_field = ['sup', 'unsup_teacher', 'unsup_student']
 #========================================================dataset pipeline ================================================
 # supervised pipline use default deformable_detr train pipeline 
@@ -119,7 +119,7 @@ unsup_pipeline = [
 
 test_pipeline = [
     dict(type='LoadImageFromFile', backend_args=backend_args),
-    dict(type='Resize', scale=(1333, 800), keep_ratio=True),
+    dict(type='Resize', scale=(800, 1333), keep_ratio=True),
     dict(
         type='PackDetInputs',
         meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
@@ -129,7 +129,6 @@ test_pipeline = [
 # ================================================datasets==================================================
 # dataset settings 
 # use cityscapes as labeled data and foggy cityscapes as unlabeled data
-# both datasets share the same annotations
 
 labeled_dataset = dict(
     type=dataset_type,
