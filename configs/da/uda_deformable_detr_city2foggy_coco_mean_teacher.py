@@ -7,6 +7,7 @@ _base_ = [
 
 detector = _base_.model 
 # detector.init_cfg = dict(type='Pretrained', checkpoint='work_dirs/uda_deformable_detr_city2foggy_coco_source/epoch_50.pth')
+
 # detector.data_preprocessor = dict(
 #     type='DetDataPreprocessor',
 #     mean=[103.530, 116.280, 123.675],
@@ -99,4 +100,3 @@ custom_hooks = [dict(type='MeanTeacherHook',skip_buffer=False)]
 
 
 auto_scale_lr = dict(base_batch_size=32,enable=True)
-launcher = dict(type='pytorch')

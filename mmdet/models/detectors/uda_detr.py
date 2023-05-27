@@ -32,46 +32,12 @@ class UDA_DETR(SemiBaseDetector):
             load_checkpoint(self.teacher,ckpt,map_location='cpu')
     
     
-    # def loss_by_pseudo_instances(self,
-    #                              batch_inputs: Tensor,
-    #                              batch_data_samples: SampleList,
-    #                              batch_info: Optional[dict] = None) -> dict:
-    #     """Calculate losses from a batch of inputs and pseudo data samples.
-
-    #     Args:
-    #         batch_inputs (Tensor): Input images of shape (N, C, H, W).
-    #             These should usually be mean centered and std scaled.
-    #         batch_data_samples (List[:obj:`DetDataSample`]): The batch
-    #             data samples. It usually includes information such
-    #             as `gt_instance` or `gt_panoptic_seg` or `gt_sem_seg`,
-    #             which are `pseudo_instance` or `pseudo_panoptic_seg`
-    #             or `pseudo_sem_seg` in fact.
-    #         batch_info (dict): Batch information of teacher model
-    #             forward propagation process. Defaults to None.
-
-    #     Returns:
-    #         dict: A dictionary of loss components
-    #     """
-    #     # batch_data_samples = filter_gt_instances(
-    #     #     batch_data_samples, score_thr=self.semi_train_cfg.cls_pseudo_thr)
-    #     losses = self.student.loss(batch_inputs, batch_data_samples)
-    #     pseudo_instances_num = sum([
-    #         len(data_samples.gt_instances)
-    #         for data_samples in batch_data_samples
-    #     ])
-    #     unsup_weight = self.semi_train_cfg.get(
-    #         'unsup_weight', 1.) if pseudo_instances_num > 0 else 0.
-    #     return rename_loss_dict('unsup_',
-    #                             reweight_loss_dict(losses, unsup_weight))
-
-
 
     @torch.no_grad()
     def get_pseudo_instances(
                             self,batch_inputs: Tensor, batch_data_samples: SampleList
                             ) -> Tuple[SampleList, Optional[dict]]:
         """Get pseudo instances from teacher model."""
-        # x = self.teacher.extract_feat(batch_inputs)
         self.teacher.eval()
         # get teacher query and teacher's predict
         tea_img_feats = self.teacher.extract_feat(batch_inputs)
@@ -85,11 +51,12 @@ class UDA_DETR(SemiBaseDetector):
         
         
         results_list = self.teacher.bbox_head.predict(**tea_head_inputs_dict,
-                                                      batch_data_samples=batch_data_samples,rescale=False)
+                                                      batch_data_samples=batch_data_samples,rescale=True)
         teacher_query_pos = tea_decoder_inputs_dict["query_pos"]
         
-        # results_list = self.teacher.predict(batch_inputs,batch_data_samples,rescale=False)
+        # torch.save(results_list,'./work_dirs/tea_predict_result_list.pkl')
         
+        # results_list = self.teacher.predict(batch_inputs,batch_data_samples,rescale=False)
         for data_samples, results in zip(batch_data_samples, results_list):
             data_samples.gt_instances = results
         
@@ -103,6 +70,7 @@ class UDA_DETR(SemiBaseDetector):
                 data_samples.gt_instances.bboxes,
                 torch.from_numpy(data_samples.homography_matrix).inverse().to(
                     self.data_preprocessor.device), data_samples.ori_shape)
+        # torch.save(results_list,'./work_dirs/tea_predict_result_list_matrix.pkl')
        
         batch_info = {
             # 'feat': x,
