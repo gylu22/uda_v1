@@ -75,6 +75,7 @@ sup_pipeline = [
 # pipeline used to augment unlabeled data weakly,
 # which will be sent to teacher model for predicting pseudo instances.
 weak_pipeline = [
+    dict(type='LoadAnnotations', with_bbox=True),
     dict(type='RandomResize', scale=scale, keep_ratio=True),
     dict(type='RandomFlip', prob=0.5),
     dict(
@@ -87,6 +88,7 @@ weak_pipeline = [
 # pipeline used to augment unlabeled data strongly,
 # which will be sent to student model for unsupervised training.
 strong_pipeline = [
+    dict(type='LoadEmptyAnnotations'),
     dict(type='RandomResize', scale=scale, keep_ratio=True),
     dict(type='RandomFlip', prob=0.5),
     dict(
@@ -108,7 +110,7 @@ strong_pipeline = [
 # pipeline used to augment unlabeled data into different views
 unsup_pipeline = [
     dict(type='LoadImageFromFile', backend_args=backend_args),
-    dict(type='LoadEmptyAnnotations'),
+    # dict(type='LoadEmptyAnnotations'),
     dict(
         type='MultiBranch',
         branch_field=branch_field,

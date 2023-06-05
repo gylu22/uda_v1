@@ -32,12 +32,12 @@ model=dict(
     ckpt='work_dirs/uda_deformable_detr_city2foggy_coco_source/epoch_50.pth'
     )
 
+
 """
 # learning policy
 max_epochs = 50
 train_cfg = dict(
-    # type='EpochBasedTrainLoop',
-    by_epoch=True,max_epochs=max_epochs, val_begin=1, val_interval=1)
+    type='EpochBasedTrainLoop',max_epochs=max_epochs, val_begin=1, val_interval=1)
 
 val_cfg = dict(type='TeacherStudentValLoop')
 test_cfg = dict(type='TestLoop')
@@ -57,27 +57,32 @@ param_scheduler = [
 # optimizer
 optim_wrapper = dict(
     type='OptimWrapper',
-    optimizer=dict(type='AdamW', lr=0.0002, weight_decay=0.0001))
+    optimizer=dict(type='AdamW', lr=3.2e-5, weight_decay=0.0001))
 
-
+default_hooks = dict(
+    checkpoint=dict(by_epoch=True, interval=50000, max_keep_ckpts=2))
+log_processor = dict(by_epoch=True)
 # seed 
 randomness=dict(seed=0)
 
 auto_scale_lr = dict(base_batch_size=32,enable=True)
 
 custom_hooks = [dict(type='MeanTeacherHook',skip_buffer=False)]
+
 """
+
+
 
 # training schedule for 180k
 train_cfg = dict(
-    type='IterBasedTrainLoop', max_iters=150000, val_interval=3000)
+    type='IterBasedTrainLoop', max_iters=150000, val_interval=500)
 val_cfg = dict(type='TeacherStudentValLoop')
 test_cfg = dict(type='TestLoop')
 
 # learning rate policy
 param_scheduler = [
-    # dict(
-    #     type='LinearLR', start_factor=0.001, by_epoch=False, begin=0, end=500),
+    dict(
+        type='LinearLR', start_factor=0.001, by_epoch=False, begin=0, end=1000),
     dict(
         type='MultiStepLR',
         begin=0,
@@ -96,7 +101,9 @@ default_hooks = dict(
     checkpoint=dict(by_epoch=False, interval=50000, max_keep_ckpts=2))
 log_processor = dict(by_epoch=False)
 
-custom_hooks = [dict(type='MeanTeacherHook',skip_buffer=False)]
+custom_hooks = [dict(type='MeanTeacherHook',skip_buffer=False),
+                dict(type='ComputePR',interval=100)]
 
 
 auto_scale_lr = dict(base_batch_size=32,enable=True)
+
