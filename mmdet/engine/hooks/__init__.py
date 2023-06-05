@@ -9,10 +9,10 @@ from .sync_norm_hook import SyncNormHook
 from .utils import trigger_visualization_hook
 from .visualization_hook import DetVisualizationHook
 from .yolox_mode_switch_hook import YOLOXModeSwitchHook
-
+from .compute_pr_hook import ComputePR
 __all__ = [
     'YOLOXModeSwitchHook', 'SyncNormHook', 'CheckInvalidLossHook',
     'SetEpochInfoHook', 'MemoryProfilerHook', 'DetVisualizationHook',
     'NumClassCheckHook', 'MeanTeacherHook', 'trigger_visualization_hook',
-    'PipelineSwitchHook'
+    'PipelineSwitchHook','ComputePR'
 ]
