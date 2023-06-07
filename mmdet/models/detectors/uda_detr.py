@@ -83,18 +83,18 @@ class UDA_DETR(SemiBaseDetector):
         
         
         if self.save_pr:
-            TP,FP,FN,precision, recall = self.compute_pr(tea_gt_instances,batch_data_samples)
-            # print(f"precision:{precision} recall:{recall}")
-            data = {'iter':self.iter,'TP':TP,'FP':FP,'FN':FN,'precision':precision,'recall':recall}       
-            if self.iter ==0:
-                 with open('work_dirs/gt_pseudo_vis/compute_pr.json', 'w') as f:
+            gt_labels = tea_gt_instances.labels.tolist()
+            pseudo_labels = batch_data_samples[0].gt_instances.labels.tolist()
+            data = {'iter':self.iter,'teacher_gt_labels':gt_labels, 'pseudo_labels':pseudo_labels}
+            if self.iter == 0:
+                with open('work_dirs/gt_pseudo_vis/class_disl.json','w') as f:
                     data = [data]
                     json.dump(data,f,indent=4)
             else:
-                with open('work_dirs/gt_pseudo_vis/compute_pr.json', 'r') as f:
-                    data_list = json.load(f)   
+                with open('work_dirs/gt_pseudo_vis/class_disl.json','r') as f:
+                    data_list = json.load(f) 
                 data_list.append(data)
-                with open('work_dirs/gt_pseudo_vis/compute_pr.json', 'w') as f:
+                with open('work_dirs/gt_pseudo_vis/class_disl.json', 'w') as f:
                     json.dump(data_list,f,indent=4)
             
             self.save_pr=False
@@ -217,71 +217,75 @@ class UDA_DETR(SemiBaseDetector):
        
        
        
-    def compute_pr(self,tea_gt_instances,batch_data_samples,iou_thr=0.5):
+       
+       
+       
+       
+    # def compute_pr(self,tea_gt_instances,batch_data_samples,iou_thr=0.5):
         
-        gt_bboxes = tea_gt_instances.bboxes.cpu().numpy().tolist()
-        pred_bboxes = batch_data_samples[0].gt_instances.bboxes.cpu().numpy().tolist()
+    #     gt_bboxes = tea_gt_instances.bboxes.cpu().numpy().tolist()
+    #     pred_bboxes = batch_data_samples[0].gt_instances.bboxes.cpu().numpy().tolist()
         
-        true_positives = 0
-        false_positives = 0
-        false_negatives = 0
+    #     true_positives = 0
+    #     false_positives = 0
+    #     false_negatives = 0
         
-         # 对于每个检测框，找到 IoU 值最大的 Ground Truth 框
-        for pred_bbox in pred_bboxes:
-            max_iou = 0
-            for gt_bbox in gt_bboxes:
-                iou = self.compute_iou(pred_bbox,gt_bbox)
-                if iou > max_iou:
-                    max_iou = iou
-                    best_gt = gt_bbox
+    #      # 对于每个检测框，找到 IoU 值最大的 Ground Truth 框
+    #     for pred_bbox in pred_bboxes:
+    #         max_iou = 0
+    #         for gt_bbox in gt_bboxes:
+    #             iou = self.compute_iou(pred_bbox,gt_bbox)
+    #             if iou > max_iou:
+    #                 max_iou = iou
+    #                 best_gt = gt_bbox
 
-            # 如果最大 IoU 值大于阈值，则将其视为正确检测
-            if max_iou > iou_thr:
-                true_positives += 1
-                gt_bboxes.remove(best_gt)
-            else:
-                false_positives += 1
+    #         # 如果最大 IoU 值大于阈值，则将其视为正确检测
+    #         if max_iou > iou_thr:
+    #             true_positives += 1
+    #             gt_bboxes.remove(best_gt)
+    #         else:
+    #             false_positives += 1
 
-        # 计算漏检的目标数量
-        false_negatives = len(gt_bboxes)
+    #     # 计算漏检的目标数量
+    #     false_negatives = len(gt_bboxes)
 
-        # 计算 Precision 和 Recall
-        if true_positives + false_positives == 0:
-            precision = 0
-        else:
-            precision = true_positives / (true_positives + false_positives)
+    #     # 计算 Precision 和 Recall
+    #     if true_positives + false_positives == 0:
+    #         precision = 0
+    #     else:
+    #         precision = true_positives / (true_positives + false_positives)
 
-        if true_positives + false_negatives == 0:
-            recall = 0
-        else:
-            recall = true_positives / (true_positives + false_negatives)
+    #     if true_positives + false_negatives == 0:
+    #         recall = 0
+    #     else:
+    #         recall = true_positives / (true_positives + false_negatives)
 
-        return true_positives,false_positives,false_negatives,precision, recall
+    #     return true_positives,false_positives,false_negatives,precision, recall
     
     
     
     
     
-    def compute_iou(self,box1,box2):
+    # def compute_iou(self,box1,box2):
         
-         # 计算两个框的交集的左上角和右下角坐标
-        x1 = max(box1[0], box2[0])
-        y1 = max(box1[1], box2[1])
-        x2 = min(box1[2], box2[2])
-        y2 = min(box1[3], box2[3])                                                                                                                                                                                                  
+    #      # 计算两个框的交集的左上角和右下角坐标
+    #     x1 = max(box1[0], box2[0])
+    #     y1 = max(box1[1], box2[1])
+    #     x2 = min(box1[2], box2[2])
+    #     y2 = min(box1[3], box2[3])                                                                                                                                                                                                  
 
-        # 计算交集的面积
-        intersection = max(0, x2 - x1) * max(0, y2 - y1)
+    #     # 计算交集的面积
+    #     intersection = max(0, x2 - x1) * max(0, y2 - y1)
 
-        # 计算并集的面积
-        area1 = (box1[2] - box1[0]) * (box1[3] - box1[1])
-        area2 = (box2[2] - box2[0]) * (box2[3] - box2[1])
-        union = area1 + area2 - intersection
+    #     # 计算并集的面积
+    #     area1 = (box1[2] - box1[0]) * (box1[3] - box1[1])
+    #     area2 = (box2[2] - box2[0]) * (box2[3] - box2[1])
+    #     union = area1 + area2 - intersection
 
-        # 计算 IoU 值
-        iou = intersection / union  if union != 0 else 0
+    #     # 计算 IoU 值
+    #     iou = intersection / union  if union != 0 else 0
         
-        return iou    
+    #     return iou    
     
     
     
