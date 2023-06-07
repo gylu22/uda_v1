@@ -14,6 +14,7 @@ from mmdet.utils import ConfigType, OptConfigType, OptMultiConfig
 from .semi_base import SemiBaseDetector
 from mmengine.runner import load_checkpoint
 
+import json
 
 
 @MODELS.register_module()
@@ -79,13 +80,26 @@ class UDA_DETR(SemiBaseDetector):
                     self.data_preprocessor.device), data_samples.ori_shape)
         # torch.save(batch_data_samples[0].gt_instances,'work_dirs/gt_pseudo_vis/pkl/pre_1.pkl')
         ############################################################################################
+        
+        
         if self.save_pr:
             TP,FP,FN,precision, recall = self.compute_pr(tea_gt_instances,batch_data_samples)
             # print(f"precision:{precision} recall:{recall}")
-            f = open('work_dirs/gt_pseudo_vis/precision_recall_warmup.txt','a+')
-            f.write(f"iter:{self.iter} TP:{TP} FP:{FP} FN:{FN} precision:{precision} recall:{recall}\n")
-            f.close()
+            data = {'iter':self.iter,'TP':TP,'FP':FP,'FN':FN,'precision':precision,'recall':recall}       
+            if self.iter ==0:
+                 with open('work_dirs/gt_pseudo_vis/compute_pr.json', 'w') as f:
+                    data = [data]
+                    json.dump(data,f,indent=4)
+            else:
+                with open('work_dirs/gt_pseudo_vis/compute_pr.json', 'r') as f:
+                    data_list = json.load(f)   
+                data_list.append(data)
+                with open('work_dirs/gt_pseudo_vis/compute_pr.json', 'w') as f:
+                    json.dump(data_list,f,indent=4)
+            
             self.save_pr=False
+         
+         
             
         batch_info = {
             # 'feat': x,
