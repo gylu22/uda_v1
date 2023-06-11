@@ -102,8 +102,8 @@ default_hooks = dict(
 log_processor = dict(by_epoch=False)
 
 custom_hooks = [dict(type='MeanTeacherHook',skip_buffer=False),
-                dict(type='ComputePR',interval=100)]
-
+                dict(type='ComputePR',interval=1)]
+# custom_hooks = [dict(type='MeanTeacherHook',skip_buffer=False)]
 
 auto_scale_lr = dict(base_batch_size=32,enable=True)
 
