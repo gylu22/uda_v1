@@ -1,4 +1,4 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .loops import TeacherStudentValLoop
-
-__all__ = ['TeacherStudentValLoop']
+from .act_test_loop import  ACTLoop
+__all__ = ['TeacherStudentValLoop','ACTLoop']

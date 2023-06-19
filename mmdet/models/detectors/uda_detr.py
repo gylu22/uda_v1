@@ -13,8 +13,10 @@ from mmdet.registry import MODELS
 from mmdet.utils import ConfigType, OptConfigType, OptMultiConfig
 from .semi_base import SemiBaseDetector
 from mmengine.runner import load_checkpoint
-
+from mmengine.structures import InstanceData
 import json
+import cv2
+import numpy as np 
 
 
 @MODELS.register_module()
@@ -35,7 +37,11 @@ class UDA_DETR(SemiBaseDetector):
             load_checkpoint(self.teacher,ckpt,map_location='cpu')
         
         # self.save_pr = False
-        # self.iter = 0
+        self.iter = 0
+        self.save_img_interval = False
+        self.cls_thr = [0.5] * 8
+        self.cls_thr_ig = [0.2] * 8
+        
         
     @torch.no_grad()
     def get_pseudo_instances(
@@ -64,42 +70,53 @@ class UDA_DETR(SemiBaseDetector):
                                                       batch_data_samples=batch_data_samples,rescale=False)
         teacher_query_pos = tea_decoder_inputs_dict["query_pos"]
         
-        # torch.save(tea_gt_instances,'work_dirs/gt_pseudo_vis/pkl/gt_1.pkl')
+            
+        for result in results_list:
+            result.bboxes = bbox_project(
+                result.bboxes,
+                torch.from_numpy(batch_data_samples[0].homography_matrix).inverse().to(
+                    self.data_preprocessor.device), batch_data_samples[0].ori_shape)
+        # filter the pseudo labels with adaptative thr 
+        results_list = self.filter_pred_instances(results_list,self.cls_thr)
+       
+        # with open('work_dirs/visualization/act_0.4/pkl/img_path.txt','a') as f:
+        #     f.write(f'{batch_data_samples[0].img_path}\n')
         
+    
         for data_samples, results in zip(batch_data_samples, results_list):
             data_samples.gt_instances = results
         
-        batch_data_samples = filter_gt_instances(
-            batch_data_samples,
-            score_thr=self.semi_train_cfg.pseudo_label_initial_score_thr)
         
-        for data_samples in batch_data_samples:
-            data_samples.gt_instances.bboxes = bbox_project(
-                data_samples.gt_instances.bboxes,
-                torch.from_numpy(data_samples.homography_matrix).inverse().to(
-                    self.data_preprocessor.device), data_samples.ori_shape)
+        # for data_samples in batch_data_samples:
+        #     data_samples.gt_instances.bboxes = bbox_project(
+        #         data_samples.gt_instances.bboxes,
+        #         torch.from_numpy(data_samples.homography_matrix).inverse().to(
+        #             self.data_preprocessor.device), data_samples.ori_shape)
+            
+        # if self.save_img_interval:
+        #     self.save_vis_img(batch_data_samples=batch_data_samples)     
+        #     self.save_img_interval = False
+            
         # torch.save(batch_data_samples[0].gt_instances,'work_dirs/gt_pseudo_vis/pkl/pre_1.pkl')
         ############################################################################################
         
         
-        if self.save_pr:
-            TP,FP,FN,precision, recall = self.compute_pr(tea_gt_instances,batch_data_samples)
-            # print(f"precision:{precision} recall:{recall}")
-            data = {'iter':self.iter,'TP':TP,'FP':FP,'FN':FN,'precision':precision,'recall':recall}       
-            if self.iter ==0:
-                 with open('work_dirs/gt_pseudo_vis/compute_pr.json', 'w') as f:
-                    data = [data]
-                    json.dump(data,f,indent=4)
-            else:
-                with open('work_dirs/gt_pseudo_vis/compute_pr.json', 'r') as f:
-                    data_list = json.load(f)   
-                data_list.append(data)
-                with open('work_dirs/gt_pseudo_vis/compute_pr.json', 'w') as f:
-                    json.dump(data_list,f,indent=4)
+        # if self.save_pr:
+        #     TP,FP,FN,precision, recall = self.compute_pr(tea_gt_instances,batch_data_samples)
+        #     # print(f"precision:{precision} recall:{recall}")
+        #     data = {'iter':self.iter,'TP':TP,'FP':FP,'FN':FN,'precision':precision,'recall':recall}       
+        #     if self.iter ==0:
+        #          with open('work_dirs/gt_pseudo_vis/compute_pr.json', 'w') as f:
+        #             data = [data]
+        #             json.dump(data,f,indent=4)
+        #     else:
+        #         with open('work_dirs/gt_pseudo_vis/compute_pr.json', 'r') as f:
+        #             data_list = json.load(f)   
+        #         data_list.append(data)
+        #         with open('work_dirs/gt_pseudo_vis/compute_pr.json', 'w') as f:
+        #             json.dump(data_list,f,indent=4)
             
-            self.save_pr=False
-         
-         
+        #     self.save_pr=False
             
         batch_info = {
             # 'feat': x,
@@ -190,8 +207,6 @@ class UDA_DETR(SemiBaseDetector):
                 'unsup_student'] = self.project_pseudo_instances(
                     origin_pseudo_data_samples,
                     multi_batch_data_samples['unsup_student'])
-                
-            # torch.save(multi_batch_data_samples['unsup_student'][0].gt_instances,'work_dirs/student_outputs_vis/outputs/tea_to_stu_0')
             
             losses.update(**self.loss_by_pseudo_instances(
                 multi_batch_inputs['unsup_student'],
@@ -218,7 +233,7 @@ class UDA_DETR(SemiBaseDetector):
        
     
        
-       
+    """
     def compute_pr(self,tea_gt_instances,batch_data_samples,iou_thr=0.5):
         
         gt_bboxes = tea_gt_instances.bboxes.cpu().numpy().tolist()
@@ -259,11 +274,7 @@ class UDA_DETR(SemiBaseDetector):
             recall = true_positives / (true_positives + false_negatives)
 
         return true_positives,false_positives,false_negatives,precision, recall
-    
-    
-    
-    
-    
+
     def compute_iou(self,box1,box2):
         
          # 计算两个框的交集的左上角和右下角坐标
@@ -285,6 +296,40 @@ class UDA_DETR(SemiBaseDetector):
         
         return iou    
     
+    """
+    
+    def filter_pred_instances(self,pred_instances,act_thr):
+        outputs_list = []
+        pred_instances = pred_instances[0]
+        # torch.save(pred_instances,f'work_dirs/visualization/act_0.4/pkl/act_out_{self.iter}.pkl')
+        
+        if pred_instances.bboxes.shape[0] > 0:
+            labels = pred_instances.labels
+            for cls in range(len(act_thr)):
+                if torch.any(torch.eq(labels,cls)):
+                    tmp_instances = pred_instances[pred_instances.labels == cls]
+                    tmp_instances = tmp_instances[tmp_instances.scores > act_thr[cls]]
+                    outputs_list.append(tmp_instances)
+                    
+        outputs = InstanceData.cat(outputs_list)
+        # torch.save(outputs,f'work_dirs/visualization/act_0.4/pkl/act_out_filter_{self.iter}.pkl')
+        return outputs
     
     
-   
+    
+    
+    
+    
+    # def save_vis_img(self,batch_data_samples):
+    #     img_path = batch_data_samples[0].img_path
+    #     image = cv2.imread(img_path)
+    #     bboxes = batch_data_samples[0].gt_instances.bboxes.cpu().detach().numpy().astype(np.int32)
+    #     n = bboxes.shape[0]
+    #     for i in range(n):
+    #         bbox_x_min = bboxes[i][0]
+    #         bbox_y_min = bboxes[i][1]
+    #         bbox_x_max = bboxes[i][2]
+    #         bbox_y_max = bboxes[i][3]
+    #         cv2.rectangle(image, (bbox_x_min,bbox_y_min), (bbox_x_max,bbox_y_max), (0, 0, 255), 1)
+            
+    #     cv2.imwrite(f'work_dirs/gt_pseudo_vis/act_1/act_{self.iter}.jpg', image)

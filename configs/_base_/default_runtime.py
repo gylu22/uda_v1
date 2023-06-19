@@ -23,7 +23,7 @@ env_cfg = dict(
 # load_from = None
 # resume = False
 
-vis_backends = [dict(type='WandbVisBackend',init_kwargs=dict(project='uda_v1',name ='uda_deformable_detr_mean_teacher_v9'))]
+vis_backends = [dict(type='WandbVisBackend',init_kwargs=dict(project='uda_v1',name ='uda_deformable_detr_mean_teacher_act_percent0.2_interval_500'))]
 visualizer = dict(
     type='DetLocalVisualizer', vis_backends=vis_backends, name='visualizer')
 log_processor = dict(type='LogProcessor', window_size=50, by_epoch=True)
