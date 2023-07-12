@@ -3,7 +3,7 @@ data_root = 'data/Devkit/city2foggy/'
 
 backend_args = None
 batch_size = 2
-num_workers = 4
+num_workers = 6
 
 
 color_space = [
@@ -26,7 +26,7 @@ geometric = [
     [dict(type='TranslateY')],
 ]
 
-scale = [(400, 1333), (1200, 1333)]
+scale = [(1333, 600), (1333, 1200)]
 branch_field = ['sup', 'unsup_teacher', 'unsup_student']
 #========================================================dataset pipeline ================================================
 # supervised pipline use default deformable_detr train pipeline 
@@ -34,37 +34,15 @@ branch_field = ['sup', 'unsup_teacher', 'unsup_student']
 sup_pipeline = [
     dict(type='LoadImageFromFile', backend_args=None),
     dict(type='LoadAnnotations', with_bbox=True),
+    dict(type='RandomResize', scale=scale, keep_ratio=True),
     dict(type='RandomFlip', prob=0.5),
     dict(
-        type='RandomChoice',
-        transforms=[[{
-            'type':
-            'RandomChoiceResize',
-            'scales': [(480, 1333), (512, 1333), (544, 1333), (576, 1333),
-                       (608, 1333), (640, 1333), (672, 1333), (704, 1333),
-                       (736, 1333), (768, 1333), (800, 1333)],
-            'keep_ratio':
-            True
-        }],
-                    [{
-                        'type': 'RandomChoiceResize',
-                        'scales': [(400, 4200), (500, 4200), (600, 4200)],
-                        'keep_ratio': True
-                    }, {
-                        'type': 'RandomCrop',
-                        'crop_type': 'absolute_range',
-                        'crop_size': (384, 600),
-                        'allow_negative_crop': True
-                    }, {
-                        'type':
-                        'RandomChoiceResize',
-                        'scales': [(480, 1333), (512, 1333), (544, 1333),
-                                   (576, 1333), (608, 1333), (640, 1333),
-                                   (672, 1333), (704, 1333), (736, 1333),
-                                   (768, 1333), (800, 1333)],
-                        'keep_ratio':
-                        True
-                    }]]),
+        type='RandomOrder',
+        transforms=[
+            dict(type='RandAugment', aug_space=color_space, aug_num=1),
+            dict(type='RandAugment', aug_space=geometric, aug_num=1),
+        ]),
+    dict(type='RandomErasing', n_patches=(1, 5), ratio=(0, 0.2)),
     dict(
         type='MultiBranch',
         branch_field=branch_field,
@@ -81,8 +59,8 @@ weak_pipeline = [
     dict(
         type='PackDetInputs',
         meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
-                   'scale_factor', 'flip', 'flip_direction',
-                   'homography_matrix')),
+                   'flip', 'flip_direction',
+                   'homography_matrix'))
 ]
 
 # pipeline used to augment unlabeled data strongly,
@@ -102,15 +80,15 @@ strong_pipeline = [
     dict(
         type='PackDetInputs',
         meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
-                   'scale_factor', 'flip', 'flip_direction',
+                    'scale_factor','flip', 'flip_direction',
                    'homography_matrix')),
 ]
 
-
+# 'scale_factor'
 # pipeline used to augment unlabeled data into different views
 unsup_pipeline = [
-    dict(type='LoadImageFromFile', backend_args=backend_args),
-    # dict(type='LoadEmptyAnnotations'),
+    # dict(type='LoadImageFromFile', backend_args=backend_args),
+    dict(type='LoadEmptyAnnotations'),
     dict(
         type='MultiBranch',
         branch_field=branch_field,
@@ -121,11 +99,10 @@ unsup_pipeline = [
 
 test_pipeline = [
     dict(type='LoadImageFromFile', backend_args=backend_args),
-    dict(type='Resize', scale=(800, 1333), keep_ratio=True),
+    dict(type='Resize', scale=(1333, 800), keep_ratio=True),
     dict(
         type='PackDetInputs',
-        meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
-                   'scale_factor'))
+        meta_keys=('img_id', 'img_path', 'scale_factor','ori_shape', 'img_shape'))
 ]
 
 # ================================================datasets==================================================
@@ -186,6 +163,7 @@ val_evaluator = dict(
     ann_file=data_root + 'CocoFormatAnnos/cityscapes_foggy_val_cocostyle.json',
     metric='bbox',
     format_only=False,
+    classwise=True,
     backend_args=backend_args)
 test_evaluator = val_evaluator
 

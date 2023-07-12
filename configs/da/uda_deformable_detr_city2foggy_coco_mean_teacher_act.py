@@ -20,8 +20,11 @@ model=dict(
         pseudo_label_initial_score_thr=0.5,
         min_pseudo_bbox_wh=(1e-2, 1e-2)),
     semi_test_cfg=dict(predict_on='teacher'),
-    ckpt='work_dirs/best_coco_bbox_mAP_epoch_45.pth'
-    )
+    ckpt='work_dirs/best_coco_bbox_mAP_epoch_45.pth',
+    loss_reliable_cls = dict(
+        type='CrossEntropyLoss',
+        use_sigmoid=True, 
+        loss_weight=1.0))
 
 act_hook_cfg = dict(
     interval=500,
@@ -43,7 +46,7 @@ test_cfg = dict(type='TestLoop')
 # learning rate policy
 param_scheduler = [
     dict(
-        type='LinearLR', start_factor=0.001, by_epoch=False, begin=0, end=1000),
+        type='LinearLR', start_factor=0.001, by_epoch=False, begin=0, end=500),
     dict(
         type='MultiStepLR',
         begin=0,
